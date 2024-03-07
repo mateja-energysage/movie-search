@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "movie-search"
+version = "0.1.0"
+description = "Opensearch implementation"
+authors = ["Mateja Cosovic <mateja.cosovic@energysage.com>"]
+readme = "README.md"
+
+[[tool.poetry.packages]]
+include = "api"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+mangum = "^0.17.0"
+fastapi = "0.90.0"
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.25.0"
+uvicorn = "^0.27.1"
+aws-cdk-lib = "^2.131.0"
+
+[tool.poe.tasks.bundle]
+shell="""
+poetry build && poetry run pip install --platform manylinux2014_aarch64 \
+--only-binary=:all: -U --implementation cp -t package dist/*.whl && \
+cd package ;  zip -qr ../artifact.zip . -x '*.pyc'
+"""
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
