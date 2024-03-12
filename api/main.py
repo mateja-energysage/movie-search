@@ -1,18 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from mangum import Mangum
+from api.routers.movie_router import router as movie_router
+from api.routers.login_router import router as login_router
+
 
 app = FastAPI()
+router = APIRouter(prefix="/api/v1")
+router.include_router(movie_router)
+router.include_router(login_router)
 
 
-@app.get("/tasks")
-async def get_tasks():
-    # database lookup goes here
-    return [{"id": "ptvWZ3", "text": "hello!"}, {"id": "cqDUr3", "text": "another!"}]
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World!"}
-
-
+app.include_router(router)
 handler = Mangum(app, lifespan="off")
