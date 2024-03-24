@@ -12,11 +12,16 @@ include = "api"
 python = "^3.12"
 mangum = "^0.17.0"
 fastapi = "0.90.0"
+python-multipart = "^0.0.9"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+bcrypt = "4.0.1"
+passlib = "^1.7.4"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.25.0"
 uvicorn = "^0.27.1"
 aws-cdk-lib = "^2.131.0"
+black = "^24.3.0"
 
 [tool.poe.tasks.bundle]
 shell="""
@@ -24,6 +29,9 @@ poetry build && poetry run pip install --platform manylinux2014_aarch64 \
 --only-binary=:all: -U --implementation cp -t package dist/*.whl && \
 cd package ;  zip -qr ../artifact.zip . -x '*.pyc'
 """
+
+[tool.black]
+extend-exclude = "node_modules|cdk.out|package"
 
 [build-system]
 requires = ["poetry-core"]
