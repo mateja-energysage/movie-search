@@ -6,6 +6,7 @@ import datetime
 
 from api.models.login_dto import UserDTO
 
+# TODO: Use Dynamo for this
 fake_users_db = {
     "johndoe": {
         "id": "1",
