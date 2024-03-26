@@ -1,22 +1,24 @@
 import uuid
-from typing import List
+from typing import List, Any
 from fastapi import APIRouter, Depends
 from api.auth import verify_token
 from api.models.movie_dtos import MovieDTO, MovieCreationDTO
+from api.utilities.opensearch_operations import index_document
 
 router = APIRouter()
 
 
 @router.post(
     path="/movies",
-    response_model=MovieDTO,
+    response_model=Any,
     description="Add a movie to Opensearch index.",
     dependencies=[Depends(verify_token)],
 )
 def add_movie(
     new_movie: MovieCreationDTO,
 ) -> MovieDTO:
-    return MovieDTO(id=uuid.uuid4(), name=new_movie.name, director=new_movie.director)
+    movie = MovieDTO(id=uuid.uuid4(), name=new_movie.name, director=new_movie.director)
+    return index_document("movies", movie.model_dump(), movie.id)
 
 
 @router.post(
