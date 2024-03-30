@@ -1,9 +1,9 @@
-import uuid
 from typing import List, Any
 from fastapi import APIRouter, Depends
 from api.auth import verify_token
-from api.models.movie_dtos import MovieDTO, MovieCreationDTO
+from api.models.movie_dtos import MovieDTO
 from api.utilities.opensearch_operations import index_document
+from api.utilities.s3_operations import process_csv_file
 
 router = APIRouter()
 
@@ -15,25 +15,20 @@ router = APIRouter()
     dependencies=[Depends(verify_token)],
 )
 def add_movie(
-    new_movie: MovieCreationDTO,
+    new_movie: MovieDTO,
 ) -> MovieDTO:
-    movie = MovieDTO(id=uuid.uuid4(), name=new_movie.name, director=new_movie.director)
-    return index_document("movies", movie.model_dump(), movie.id)
+    return index_document("movies", new_movie.model_dump(), new_movie.id)
 
 
 @router.post(
     "/movies/bulk",
-    response_model=List[MovieDTO],
+    response_model=Any,
     description="Add movies to Opensearch index.",
     dependencies=[Depends(verify_token)],
 )
-def add_movies(
-    new_movies: List[MovieCreationDTO],
-) -> List[MovieDTO]:
-    return [
-        MovieDTO(id=uuid.uuid4(), name=new_movie.name, director=new_movie.director)
-        for new_movie in new_movies
-    ]
+def add_movies(chunks: int | None = 1) -> List[MovieDTO]:
+    process_csv_file(chunks)
+    return {"status": "success"}
 
 
 @router.get(
@@ -44,9 +39,9 @@ def add_movies(
 )
 def get_movies() -> List[MovieDTO]:
     return [
-        MovieDTO(id=uuid.uuid4(), name="Oppenheimer1", director="Chris Nolan1"),
-        MovieDTO(id=uuid.uuid4(), name="Oppenheimer2", director="Chris Nolan2"),
-        MovieDTO(id=uuid.uuid4(), name="Oppenheimer3", director="Chris Nolan3"),
+        MovieDTO(id=1, name="Oppenheimer1", runtime=20),
+        MovieDTO(id=2, name="Oppenheimer2", runtime=20),
+        MovieDTO(id=3, name="Oppenheimer3", runtime=20),
     ]
 
 
