@@ -15,12 +15,21 @@ from aws_cdk.aws_dynamodb import (
     Table,
     TableEncryption,
 )
+import aws_cdk.aws_s3 as s3
 
 
 class MovieSearchStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+
+        self.movie_bucket = s3.Bucket(
+            self,
+            "MovieBucket",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
 
         self.user_table = Table(
             self,
@@ -56,13 +65,15 @@ class MovieSearchStack(Stack):
             environment={
                 "USER_TABLE_NAME": self.user_table.table_name,
                 "OPENSEARCH_ENDPOINT": self.movie_domain.domain_endpoint,
+                "S3_BUCKET_NAME": self.movie_bucket.bucket_name
             },
-            timeout=Duration.seconds(30),
+            timeout=Duration.seconds(60),
             memory_size=256,
         )
 
         self.user_table.grant_read_write_data(self.movie_handler_lambda)
         self.movie_domain.grant_read_write(self.movie_handler_lambda)
+        self.movie_bucket.grant_read_write(self.movie_handler_lambda)
         self.api = apigateway.LambdaRestApi(
             self, "MovieAPIGateway", handler=self.movie_handler_lambda
         )

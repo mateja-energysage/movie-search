@@ -1,13 +1,7 @@
-from uuid import UUID
 from pydantic import BaseModel
 
 
-class MovieCreationDTO(BaseModel):
-    name: str
-    director: str
-
-
 class MovieDTO(BaseModel):
-    id: UUID
+    id: int
     name: str
-    director: str
+    runtime: int

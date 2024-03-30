@@ -3,6 +3,7 @@ package-lock.json
 .pytest_cache
 *.egg-info
 artifact.zip
+archive.zip
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

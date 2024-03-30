@@ -17,6 +17,7 @@ bcrypt = "4.0.1"
 passlib = "^1.7.4"
 opensearch-py = "^2.5.0"
 fastapi = "^0.110.0"
+pandas = "^2.2.1"
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.25.0"
