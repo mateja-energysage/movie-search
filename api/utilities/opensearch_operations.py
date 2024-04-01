@@ -11,7 +11,7 @@ from opensearchpy import (
     OpenSearchException,
 )
 
-from api.models.movie_dtos import MovieDTO
+from api.models.movie_dtos import MovieDTO, SearchBodyDTO
 
 CHUNK_SIZE = 10000
 service = "es"
@@ -27,10 +27,10 @@ client = OpenSearch(
 )
 
 
-def index_document(index_name, document_body, document_id):
+def index_document(document_body, document_id):
     try:
         response = client.index(
-            index=index_name,
+            index="movies",
             body=document_body,
             id=document_id,
             refresh=True,
@@ -51,5 +51,40 @@ def populate_index(data: List[MovieDTO]) -> None:
         indexed_data.append({"index": {"_id": elem.id}})
         indexed_data.append(elem.model_dump())
 
-    response = client.bulk(body=indexed_data, index="movies1")
+    response = client.bulk(body=indexed_data, index="movies")
     logging.info(f"Number of populated indexes: {len(response['items'])}")
+
+
+def delete_index() -> None:
+    try:
+        client.indices.delete(index="movies")
+    except OpenSearchException as e:
+        logging.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Opensearch error has occurred")
+
+
+def get_movie_by_id_os(id: Any) -> MovieDTO:
+    try:
+        response = client.get(
+            id=str(id),
+            index="movies",
+        )
+    except OpenSearchException as e:
+        logging.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Opensearch error has occurred")
+    return MovieDTO(**response["_source"])
+
+
+def generate_search_query(page: int, params: SearchBodyDTO | None) -> dict[Any, Any]:
+    search_query = {"from": (page - 1) * 100, "size": 100}
+    return search_query
+
+
+def get_movies_from_os(page: int, params: SearchBodyDTO | None) -> List[MovieDTO]:
+    search_query = generate_search_query(page, params)
+    try:
+        response = client.search(body=search_query, index="movies")
+    except OpenSearchException as e:
+        logging.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Opensearch error has occurred")
+    return [MovieDTO(**elem["_source"]) for elem in response["hits"]["hits"]]

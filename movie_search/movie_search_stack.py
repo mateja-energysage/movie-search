@@ -23,6 +23,7 @@ class MovieSearchStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        # TODO: Push a file during deploy
         self.movie_bucket = s3.Bucket(
             self,
             "MovieBucket",
@@ -65,7 +66,7 @@ class MovieSearchStack(Stack):
             environment={
                 "USER_TABLE_NAME": self.user_table.table_name,
                 "OPENSEARCH_ENDPOINT": self.movie_domain.domain_endpoint,
-                "S3_BUCKET_NAME": self.movie_bucket.bucket_name
+                "S3_BUCKET_NAME": self.movie_bucket.bucket_name,
             },
             timeout=Duration.seconds(60),
             memory_size=256,

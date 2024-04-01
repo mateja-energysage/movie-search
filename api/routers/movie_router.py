@@ -1,8 +1,13 @@
-from typing import List, Any
+from typing import List, Any, Dict
 from fastapi import APIRouter, Depends
 from api.auth import verify_token
-from api.models.movie_dtos import MovieDTO
-from api.utilities.opensearch_operations import index_document
+from api.models.movie_dtos import MovieDTO, SearchBodyDTO
+from api.utilities.opensearch_operations import (
+    index_document,
+    delete_index,
+    get_movies_from_os,
+    get_movie_by_id_os,
+)
 from api.utilities.s3_operations import process_csv_file
 
 router = APIRouter()
@@ -17,16 +22,16 @@ router = APIRouter()
 def add_movie(
     new_movie: MovieDTO,
 ) -> MovieDTO:
-    return index_document("movies", new_movie.model_dump(), new_movie.id)
+    return index_document(new_movie.model_dump(), new_movie.id)
 
 
 @router.post(
     "/movies/bulk",
-    response_model=Any,
+    response_model=dict[str, str],
     description="Add movies to Opensearch index.",
     dependencies=[Depends(verify_token)],
 )
-def add_movies(chunks: int | None = 1) -> List[MovieDTO]:
+def add_movies(chunks: int | None = 1) -> dict[str, str]:
     process_csv_file(chunks)
     return {"status": "success"}
 
@@ -34,15 +39,23 @@ def add_movies(chunks: int | None = 1) -> List[MovieDTO]:
 @router.get(
     path="/movies",
     response_model=List[MovieDTO],
+    description="Get a list of movies matching params.",
+    dependencies=[Depends(verify_token)],
+)
+def get_movies(
+    page: int | None = 1, search_body: SearchBodyDTO | None = None
+) -> List[MovieDTO]:
+    return get_movies_from_os(page=page, params=search_body)
+
+
+@router.get(
+    path="/movies/{id}",
+    response_model=MovieDTO,
     description="Add a movie to Opensearch index.",
     dependencies=[Depends(verify_token)],
 )
-def get_movies() -> List[MovieDTO]:
-    return [
-        MovieDTO(id=1, name="Oppenheimer1", runtime=20),
-        MovieDTO(id=2, name="Oppenheimer2", runtime=20),
-        MovieDTO(id=3, name="Oppenheimer3", runtime=20),
-    ]
+def get_movie_by_id(id: int) -> MovieDTO:
+    return get_movie_by_id_os(id=id)
 
 
 @router.delete(
@@ -52,4 +65,4 @@ def get_movies() -> List[MovieDTO]:
     dependencies=[Depends(verify_token)],
 )
 def delete_movies() -> None:
-    pass
+    delete_index()
