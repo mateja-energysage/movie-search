@@ -36,3 +36,4 @@ def process_csv_file(chunks):
     except ClientError as ex:
         if ex.response["Error"]["Code"] == "NoSuchKey":
             print("Key doesn't match. Please check the key value entered.")
+        raise ex

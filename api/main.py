@@ -3,6 +3,7 @@ from mangum import Mangum
 from api.routers.movie_router import router as movie_router
 from api.routers.login_router import router as login_router
 
+# TODO: Configure logging to level info
 
 app = FastAPI()
 router = APIRouter(prefix="/api/v1")
