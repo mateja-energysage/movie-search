@@ -54,7 +54,7 @@ def get_movies(
     description="Add a movie to Opensearch index.",
     dependencies=[Depends(verify_token)],
 )
-def get_movie_by_id(id: int) -> MovieDTO:
+def get_movie_by_id(id: str) -> MovieDTO:
     return get_movie_by_id_os(id=id)
 
 
