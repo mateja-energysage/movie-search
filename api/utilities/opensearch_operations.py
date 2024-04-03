@@ -13,7 +13,6 @@ from opensearchpy import (
 
 from api.models.movie_dtos import MovieDTO, SearchBodyDTO
 
-CHUNK_SIZE = 10000
 service = "es"
 credentials = boto3.Session().get_credentials()
 auth = AWSV4SignerAuth(credentials, "us-east-1", service)
@@ -24,25 +23,22 @@ client = OpenSearch(
     verify_certs=True,
     connection_class=RequestsHttpConnection,
     pool_maxsize=20,
+    timeout=30,
 )
 
 
-def index_document(document_body, document_id):
+def index_document(document_body):
     try:
         response = client.index(
             index="movies",
             body=document_body,
-            id=document_id,
+            id=document_body["id"],
             refresh=True,
         )
     except OpenSearchException as e:
         logging.exception(e, exc_info=True)
         raise HTTPException(status_code=500, detail="OpenSearch error has occurred")
     return response
-
-
-def split_data_into_chunks(lst: List[MovieDTO]) -> list[list[MovieDTO]]:
-    return [lst[i : i + CHUNK_SIZE] for i in range(0, len(lst), CHUNK_SIZE)]
 
 
 def populate_index(data: List[MovieDTO]) -> None:
