@@ -6,7 +6,7 @@ from aws_cdk.aws_opensearchservice import (
     EncryptionAtRestOptions,
 )
 from constructs import Construct
-from aws_cdk import Stack, RemovalPolicy, Duration, aws_iam
+from aws_cdk import Stack, RemovalPolicy, Duration, aws_iam, Size
 from aws_cdk.aws_lambda import Runtime, Function, Code, Architecture
 import aws_cdk.aws_apigateway as apigateway
 from aws_cdk.aws_dynamodb import (
@@ -16,6 +16,7 @@ from aws_cdk.aws_dynamodb import (
     TableEncryption,
 )
 import aws_cdk.aws_s3 as s3
+from aws_cdk import aws_s3_deployment as s3deploy
 
 
 class MovieSearchStack(Stack):
@@ -30,6 +31,15 @@ class MovieSearchStack(Stack):
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
+        )
+        s3deploy.BucketDeployment(
+            self,
+            "UploadMovies",
+            sources=[s3deploy.Source.asset("./archive.zip")],
+            destination_bucket=self.movie_bucket,
+            memory_limit=2048,
+            ephemeral_storage_size=Size.mebibytes(2048),
+            retain_on_delete=False,
         )
 
         self.user_table = Table(

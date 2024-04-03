@@ -1,7 +1,7 @@
 from typing import List, Any, Dict
 from fastapi import APIRouter, Depends
 from api.auth import verify_token
-from api.models.movie_dtos import MovieDTO, SearchBodyDTO
+from api.models.movie_dtos import MovieDTO, SearchBodyDTO, NewMovieDTO
 from api.utilities.opensearch_operations import (
     index_document,
     delete_index,
@@ -20,9 +20,9 @@ router = APIRouter()
     dependencies=[Depends(verify_token)],
 )
 def add_movie(
-    new_movie: MovieDTO,
-) -> MovieDTO:
-    return index_document(new_movie.model_dump(), new_movie.id)
+    new_movie: NewMovieDTO,
+) -> Any:
+    return index_document(MovieDTO(**new_movie.model_dump()).model_dump())
 
 
 @router.post(
@@ -31,7 +31,7 @@ def add_movie(
     description="Add movies to Opensearch index.",
     dependencies=[Depends(verify_token)],
 )
-def add_movies(chunks: int | None = 1) -> dict[str, str]:
+def add_movies(chunks: int | None = 10) -> dict[str, str]:
     process_csv_file(chunks)
     return {"status": "success"}
 
@@ -54,7 +54,7 @@ def get_movies(
     description="Add a movie to Opensearch index.",
     dependencies=[Depends(verify_token)],
 )
-def get_movie_by_id(id: int) -> MovieDTO:
+def get_movie_by_id(id: str) -> MovieDTO:
     return get_movie_by_id_os(id=id)
 
 
