@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 from typing import Any, List
 
@@ -11,7 +12,7 @@ from opensearchpy import (
     OpenSearchException,
 )
 
-from api.models.movie_dtos import MovieDTO, SearchBodyDTO
+from api.models.movie_dtos import MovieDTO, SearchBodyDTO, SearchResultDTO
 
 service = "es"
 credentials = boto3.Session().get_credentials()
@@ -51,6 +52,15 @@ def populate_index(data: List[MovieDTO]) -> None:
     logging.info(f"Number of populated indexes: {len(response['items'])}")
 
 
+def set_result_window() -> None:
+    try:
+        client.indices.put_settings(index="movies", body={'index' :
+                             {'max_result_window':50000}})
+    except OpenSearchException as e:
+        logging.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Opensearch error has occurred")
+
+
 def delete_index() -> None:
     try:
         client.indices.delete(index="movies")
@@ -71,16 +81,82 @@ def get_movie_by_id_os(id: Any) -> MovieDTO:
     return MovieDTO(**response["_source"])
 
 
-def generate_search_query(page: int, params: SearchBodyDTO | None) -> dict[Any, Any]:
-    search_query = {"from": (page - 1) * 100, "size": 100}
-    return search_query
+def generate_search_query(
+    page: int, sort_by: str, params: SearchBodyDTO
+) -> dict[Any, Any]:
+    query = {
+        "track_total_hits": True,
+        "query": {
+            "bool": {
+                "must": [],
+                "filter": [],
+            }
+        },
+        "from": (page - 1) * 100,
+        "size": 100,
+        "sort": [{sort_by: {"order": "desc"}}],
+    }
+
+    if params.q:
+        query["query"]["bool"]["must"].append(
+            {
+                "bool": {
+                    "should": [
+                        {"match_phrase_prefix": {field: params.q}}
+                        for field in [
+                            "name",
+                            "overview",
+                            "production_companies",
+                        ]
+                    ]
+                }
+            }
+        )
+
+    range_params = {
+        "runtime": {"lte": params.runtime_lte, "gte": params.runtime_gte},
+        "vote_average": {
+            "lte": params.vote_average_lte,
+            "gte": params.vote_average_gte,
+        },
+        "vote_count": {"lte": params.vote_count_lte, "gte": params.vote_count_gte},
+        "revenue": {"lte": params.revenue_lte, "gte": params.revenue_gte},
+        "budget": {"lte": params.budget_lte, "gte": params.budget_gte},
+    }
+
+    if params.is_adult:
+        query["query"]["bool"]["filter"].append({"term": {"adult": params.is_adult}})
+
+    # TODO: Check this one
+    if params.genres:
+        query["query"]["bool"]["filter"].append(
+            {"terms": {"genres.keyword": params.genres}}
+        )
+
+    for field, params in range_params.items():
+        if params["lte"] is not None:
+            query["query"]["bool"]["filter"].append(
+                {"range": {field: {"lte": params["lte"]}}}
+            )
+        if params["gte"] is not None:
+            query["query"]["bool"]["filter"].append(
+                {"range": {field: {"gte": params["gte"]}}}
+            )
+
+    return query
 
 
-def get_movies_from_os(page: int, params: SearchBodyDTO | None) -> List[MovieDTO]:
-    search_query = generate_search_query(page, params)
+def get_movies_from_os(
+    page: int, sort_by: str, params: SearchBodyDTO
+) -> SearchResultDTO:
+    search_query = generate_search_query(page=page, sort_by=sort_by, params=params)
     try:
         response = client.search(body=search_query, index="movies")
     except OpenSearchException as e:
         logging.error(e, exc_info=True)
         raise HTTPException(status_code=500, detail="Opensearch error has occurred")
-    return [MovieDTO(**elem["_source"]) for elem in response["hits"]["hits"]]
+    return SearchResultDTO(
+        results=[MovieDTO(**elem["_source"]) for elem in response["hits"]["hits"]],
+        total_count=response["hits"]["total"]["value"],
+        total_pages=math.ceil(response["hits"]["total"]["value"] / 100),
+    )

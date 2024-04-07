@@ -35,7 +35,7 @@ class MovieDTO(BaseModel):
 
 class SearchBodyDTO(BaseModel):
     # This will search through name, overview and production companies
-    q: str
+    q: str | None
     runtime_lte: int | None
     runtime_gte: int | None
     vote_average_lte: float | None
@@ -46,5 +46,11 @@ class SearchBodyDTO(BaseModel):
     revenue_gte: int | None
     budget_lte: int | None
     budget_gte: int | None
-    is_adult: int | None
+    is_adult: bool | None
     genres: list[str] | None
+
+
+class SearchResultDTO(BaseModel):
+    results: list[MovieDTO]
+    total_count: int
+    total_pages: int

@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import boto3
 import pandas as pd
@@ -27,6 +28,7 @@ def process_csv_file(chunks):
             movies = []
             for index, row in df.iterrows():
                 movie = MovieDTO(
+                    id=str(uuid.uuid4()),
                     name=row["title"],
                     runtime=row["runtime"],
                     vote_average=row["vote_average"],
@@ -43,12 +45,12 @@ def process_csv_file(chunks):
                         row["overview"] if isinstance(row["overview"], str) else None
                     ),
                     genres=(
-                        row["genres"].split(",")
+                        [elem.lstrip() for elem in row["genres"].split(",")]
                         if isinstance(row["genres"], str)
                         else None
                     ),
                     production_companies=(
-                        row["production_companies"].split(",")
+                        [elem.lstrip() for elem in row["production_companies"].split(",")]
                         if isinstance(row["production_companies"], str)
                         else None
                     ),
