@@ -1,4 +1,7 @@
+import os
 from typing import List, Any, Dict
+
+import boto3
 from fastapi import APIRouter, Depends
 from api.auth import verify_token
 from api.models.movie_dtos import MovieDTO, SearchBodyDTO, NewMovieDTO, SearchResultDTO
@@ -6,7 +9,8 @@ from api.utilities.opensearch_operations import (
     index_document,
     delete_index,
     get_movies_from_os,
-    get_movie_by_id_os, set_result_window,
+    get_movie_by_id_os,
+    set_result_window,
 )
 from api.utilities.s3_operations import process_csv_file
 
@@ -32,8 +36,10 @@ def add_movie(
     dependencies=[Depends(verify_token)],
 )
 def add_movies(chunks: int | None = 10) -> dict[str, str]:
-    process_csv_file(chunks)
-    set_result_window()
+    sqs = boto3.client("sqs")
+
+    sqs.send_message(QueueUrl=os.environ.get("QUEUE_URL"), MessageBody=str(chunks))
+
     return {"status": "success"}
 
 

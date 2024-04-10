@@ -49,13 +49,14 @@ def populate_index(data: List[MovieDTO]) -> None:
         indexed_data.append(elem.model_dump())
 
     response = client.bulk(body=indexed_data, index="movies")
-    logging.info(f"Number of populated indexes: {len(response['items'])}")
+    logging.warning(f"Number of populated indexes: {len(response['items'])}")
 
 
 def set_result_window() -> None:
     try:
-        client.indices.put_settings(index="movies", body={'index' :
-                             {'max_result_window':50000}})
+        client.indices.put_settings(
+            index="movies", body={"index": {"max_result_window": 100000}}
+        )
     except OpenSearchException as e:
         logging.error(e, exc_info=True)
         raise HTTPException(status_code=500, detail="Opensearch error has occurred")

@@ -50,7 +50,10 @@ def process_csv_file(chunks):
                         else None
                     ),
                     production_companies=(
-                        [elem.lstrip() for elem in row["production_companies"].split(",")]
+                        [
+                            elem.lstrip()
+                            for elem in row["production_companies"].split(",")
+                        ]
                         if isinstance(row["production_companies"], str)
                         else None
                     ),
