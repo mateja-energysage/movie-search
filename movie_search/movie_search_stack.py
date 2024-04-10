@@ -6,7 +6,15 @@ from aws_cdk.aws_opensearchservice import (
     EncryptionAtRestOptions,
 )
 from constructs import Construct
-from aws_cdk import Stack, RemovalPolicy, Duration, aws_iam, Size
+from aws_cdk import (
+    Stack,
+    RemovalPolicy,
+    Duration,
+    aws_iam,
+    Size,
+    aws_sqs as sqs,
+    aws_lambda_event_sources,
+)
 from aws_cdk.aws_lambda import Runtime, Function, Code, Architecture
 import aws_cdk.aws_apigateway as apigateway
 from aws_cdk.aws_dynamodb import (
@@ -24,7 +32,6 @@ class MovieSearchStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # TODO: Push a file during deploy
         self.movie_bucket = s3.Bucket(
             self,
             "MovieBucket",
@@ -66,6 +73,10 @@ class MovieSearchStack(Stack):
             ],
         )
 
+        self.queue = sqs.Queue(
+            self, "BulkUploadQueue", visibility_timeout=Duration.seconds(600)
+        )
+
         self.movie_handler_lambda = Function(
             self,
             "MovieHandlerFunction",
@@ -77,14 +88,38 @@ class MovieSearchStack(Stack):
                 "USER_TABLE_NAME": self.user_table.table_name,
                 "OPENSEARCH_ENDPOINT": self.movie_domain.domain_endpoint,
                 "S3_BUCKET_NAME": self.movie_bucket.bucket_name,
+                "QUEUE_URL": self.queue.queue_url,
             },
-            timeout=Duration.seconds(60),
-            memory_size=256,
+            timeout=Duration.seconds(120),
+            memory_size=512,
         )
+        self.queue.grant_send_messages(self.movie_handler_lambda)
+
+        self.bulk_upload_lambda = Function(
+            self,
+            "BulkUploadFunction",
+            architecture=Architecture.ARM_64,
+            runtime=Runtime.PYTHON_3_12,
+            code=Code.from_asset("artifact.zip"),
+            handler="api.handlers.bulk_upload_handler",
+            environment={
+                "OPENSEARCH_ENDPOINT": self.movie_domain.domain_endpoint,
+                "S3_BUCKET_NAME": self.movie_bucket.bucket_name,
+            },
+            timeout=Duration.seconds(600),
+            memory_size=2048,
+        )
+
+        self.event_source = aws_lambda_event_sources.SqsEventSource(self.queue)
+        self.bulk_upload_lambda.add_event_source(self.event_source)
 
         self.user_table.grant_read_write_data(self.movie_handler_lambda)
         self.movie_domain.grant_read_write(self.movie_handler_lambda)
         self.movie_bucket.grant_read_write(self.movie_handler_lambda)
+
+        self.movie_domain.grant_read_write(self.bulk_upload_lambda)
+        self.movie_bucket.grant_read_write(self.bulk_upload_lambda)
+
         self.api = apigateway.LambdaRestApi(
             self, "MovieAPIGateway", handler=self.movie_handler_lambda
         )
