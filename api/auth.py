@@ -5,26 +5,7 @@ from passlib.context import CryptContext
 import datetime
 
 from api.models.login_dto import UserDTO
-
-# TODO: Use Dynamo for this
-fake_users_db = {
-    "johndoe": {
-        "id": "1",
-        "username": "johndoe",
-        "name": "John Doe",
-        "surname": "johndoe@example.com",
-        "password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "date_of_birth": datetime.datetime.now(),
-    },
-    "alice": {
-        "id": "2",
-        "username": "alice",
-        "name": "Alice Wonderson",
-        "surname": "alice@example.com",
-        "password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "date_of_birth": datetime.datetime.now(),
-    },
-}
+from api.utilities.dynamo_operations import get_item_by_pk
 
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
@@ -43,16 +24,11 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserDTO(**user_dict)
-
-
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
+def authenticate_user(username: str, password: str):
+    user = get_item_by_pk(pk=username)
     if not user:
         return False
+    user = UserDTO(**user)
     if not verify_password(password, user.password):
         return False
     return user
@@ -84,7 +60,7 @@ def verify_token(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=username)
+    user = get_item_by_pk(pk=username)
     if user is None:
         raise credentials_exception
     return user
