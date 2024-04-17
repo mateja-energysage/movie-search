@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from api.auth import (
     create_access_token,
-    fake_users_db,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
+    get_password_hash,
 )
-from api.models.login_dto import RegistrationDTO, UserDTO, Token
+from api.models.login_dto import RegistrationDTO, Token
+from api.utilities.dynamo_operations import put_item_into_table
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ router = APIRouter()
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> Token:
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,4 +40,6 @@ def login_for_access_token(
 def registration(
     registration_dto: RegistrationDTO,
 ) -> Dict[Any, Any]:
-    return {"state": "Successful registration!"}
+    registration_dto.password = get_password_hash(registration_dto.password)
+    response = put_item_into_table(registration_dto.model_dump())
+    return response

@@ -52,7 +52,7 @@ class MovieSearchStack(Stack):
         self.user_table = Table(
             self,
             "user_table",
-            partition_key=Attribute(name="email", type=AttributeType.STRING),
+            partition_key=Attribute(name="username", type=AttributeType.STRING),
             encryption=TableEncryption.AWS_MANAGED,
             removal_policy=RemovalPolicy.DESTROY,
         )
