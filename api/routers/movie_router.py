@@ -4,15 +4,21 @@ from typing import List, Any, Dict
 import boto3
 from fastapi import APIRouter, Depends
 from api.auth import verify_token
-from api.models.movie_dtos import MovieDTO, SearchBodyDTO, NewMovieDTO, SearchResultDTO
+from api.models.movie_dtos import (
+    MovieDTO,
+    SearchBodyDTO,
+    NewMovieDTO,
+    SearchResultDTO,
+    ExtendedStatType,
+)
 from api.utilities.opensearch_operations import (
     index_document,
     delete_index,
     get_movies_from_os,
     get_movie_by_id_os,
     set_result_window,
+    get_movies_extended_stats_opensearch,
 )
-from api.utilities.s3_operations import process_csv_file
 
 router = APIRouter()
 
@@ -55,6 +61,16 @@ def get_movies(
     sort_by: str | None = "vote_average",
 ) -> SearchResultDTO:
     return get_movies_from_os(page=page, sort_by=sort_by, params=search_body)
+
+
+@router.get(
+    path="/movies/extended-stats",
+    response_model=Any,
+    description="Get extended stats about runtime, budget or revenue of movies.",
+    dependencies=[Depends(verify_token)],
+)
+def get_movies_extended_stats(extended_stat_type: ExtendedStatType) -> Any:
+    return get_movies_extended_stats_opensearch(extended_stat_type=extended_stat_type)
 
 
 @router.get(

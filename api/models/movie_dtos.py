@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from enum import Enum
 
 from pydantic import BaseModel
 
@@ -54,3 +55,9 @@ class SearchResultDTO(BaseModel):
     results: list[MovieDTO]
     total_count: int
     total_pages: int
+
+
+class ExtendedStatType(str, Enum):
+    runtime = "runtime"
+    budget = "budget"
+    revenue = "revenue"

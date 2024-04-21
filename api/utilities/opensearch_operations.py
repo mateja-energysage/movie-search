@@ -12,7 +12,12 @@ from opensearchpy import (
     OpenSearchException,
 )
 
-from api.models.movie_dtos import MovieDTO, SearchBodyDTO, SearchResultDTO
+from api.models.movie_dtos import (
+    MovieDTO,
+    SearchBodyDTO,
+    SearchResultDTO,
+    ExtendedStatType,
+)
 
 service = "es"
 credentials = boto3.Session().get_credentials()
@@ -161,3 +166,17 @@ def get_movies_from_os(
         total_count=response["hits"]["total"]["value"],
         total_pages=math.ceil(response["hits"]["total"]["value"] / 100),
     )
+
+
+def get_movies_extended_stats_opensearch(extended_stat_type: ExtendedStatType) -> Any:
+    search_query = {
+        "aggs": {
+            "extended_stats": {"extended_stats": {"field": extended_stat_type.value}}
+        },
+    }
+    try:
+        response = client.search(body=search_query, index="movies")
+    except OpenSearchException as e:
+        logging.error(e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Opensearch error has occurred")
+    return response["aggregations"]["extended_stats"]
