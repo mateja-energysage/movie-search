@@ -14,6 +14,9 @@ from aws_cdk import (
     Size,
     aws_sqs as sqs,
     aws_lambda_event_sources,
+    aws_cloudfront as cloudfront,
+    aws_cloudfront_origins as origins,
+    CfnOutput
 )
 from aws_cdk.aws_lambda import Runtime, Function, Code, Architecture
 import aws_cdk.aws_apigateway as apigateway
@@ -31,6 +34,7 @@ class MovieSearchStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+        path = "movie_search/resources/build"
 
         self.movie_bucket = s3.Bucket(
             self,
@@ -123,3 +127,44 @@ class MovieSearchStack(Stack):
         self.api = apigateway.LambdaRestApi(
             self, "MovieAPIGateway", handler=self.movie_handler_lambda
         )
+
+        ### FRONTEND PART OF CDK ###
+        self.hosting_bucket = s3.Bucket(self, 'FrontendBucket',
+                                        auto_delete_objects=True,
+                                        block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+                                        removal_policy=RemovalPolicy.DESTROY
+                                        )
+
+        self.distribution = cloudfront.Distribution(self, 'CloudfrontDistribution',
+                                                    default_behavior=cloudfront.BehaviorOptions(
+                                                        origin=origins.S3Origin(self.hosting_bucket),
+                                                        viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                                                    ),
+                                                    default_root_object='index.html',
+                                                    error_responses=[
+                                                        cloudfront.ErrorResponse(
+                                                            http_status=404,
+                                                            response_http_status=200,
+                                                            response_page_path='/index.html',
+                                                        ),
+                                                    ]
+                                                    )
+
+        s3deploy.BucketDeployment(self, 'BucketDeployment',
+                                  sources=[s3deploy.Source.asset(path)],
+                                  destination_bucket=self.hosting_bucket,
+                                  distribution=self.distribution,
+                                  distribution_paths=['/*'],
+                                  )
+
+        CfnOutput(self, 'CloudFrontURL',
+                  value=self.distribution.domain_name,
+                  description='The distribution URL',
+                  export_name='CloudfrontURL',
+                  )
+
+        CfnOutput(self, 'BucketName',
+                  value=self.hosting_bucket.bucket_name,
+                  description='The name of the S3 bucket',
+                  export_name='BucketName',
+                  )
