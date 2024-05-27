@@ -1,25 +1,35 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import logo from "./logo.svg";
+import "./App.css";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Layout from "./components/Layout";
+import Upload from "./components/Upload";
+import Search from "./components/Search";
+import Statistics from "./components/Statistics";
+import NotFound from "./components/NotFound";
+import Registration from "./components/Registration";
+import Login from "./components/Login";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <div className="App">
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index path="login" element={<Login />} />
+              <Route path="registration" element={<Registration />} />
+              <Route path="upload" element={<Upload />} />
+              <Route path="search" element={<Search />} />
+              <Route path="statistics" element={<Statistics />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </div>
+    </LocalizationProvider>
   );
 }
 
