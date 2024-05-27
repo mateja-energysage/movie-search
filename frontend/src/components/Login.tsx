@@ -1,4 +1,4 @@
-import { Button, Grid, TextField } from "@mui/material";
+import { Button, Grid, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 
 const Login = () => {
@@ -37,7 +37,6 @@ const Login = () => {
 
   return (
     <div>
-      <h1>Login</h1>
       <Grid
         container
         direction="column"
@@ -45,6 +44,9 @@ const Login = () => {
         alignItems="center"
         spacing={2}
       >
+        <Typography variant="h3" gutterBottom>
+          Login
+        </Typography>
         <TextField
           id="username"
           name="username"

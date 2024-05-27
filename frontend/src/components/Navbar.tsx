@@ -28,7 +28,7 @@ export default function Navbar() {
   // TODO: put navigation to all routes
   // TODO: When logged in remove registration and login, add logout button
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, marginBottom: 10 }}>
       <AppBar position="static">
         <Toolbar>
           <Box sx={{ flexGrow: 1, display: "flex" }}>

@@ -1,4 +1,4 @@
-import { Button, Grid, TextField } from "@mui/material";
+import { Button, Grid, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { DateField } from "@mui/x-date-pickers";
 
@@ -45,7 +45,6 @@ const Registration = () => {
 
   return (
     <div>
-      <h1>Registration</h1>
       <Grid
         container
         direction="column"
@@ -53,6 +52,9 @@ const Registration = () => {
         alignItems="center"
         spacing={2}
       >
+        <Typography variant="h3" gutterBottom>
+          Registration
+        </Typography>
         <TextField
           id="username"
           name="username"
