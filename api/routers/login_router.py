@@ -41,5 +41,5 @@ def registration(
     registration_dto: RegistrationDTO,
 ) -> Dict[Any, Any]:
     registration_dto.password = get_password_hash(registration_dto.password)
-    response = put_item_into_table(registration_dto.model_dump())
-    return response
+    put_item_into_table(registration_dto.model_dump())
+    return registration_dto.model_dump()
