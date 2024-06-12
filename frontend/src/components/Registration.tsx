@@ -1,6 +1,10 @@
-import { Button, Grid, TextField, Typography } from "@mui/material";
+import { Button, Grid, Snackbar, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { DateField } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import API from "../api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Registration = () => {
   const initialValues = {
@@ -8,7 +12,7 @@ const Registration = () => {
     password: "",
     name: "",
     surname: "",
-    date_of_birth: null,
+    date_of_birth: dayjs(),
   };
 
   const [formValues, setFormValues] = useState(initialValues);
@@ -23,24 +27,23 @@ const Registration = () => {
     });
   };
 
+  const isFormValid = () => {
+    return (
+      formValues.username &&
+      formValues.password &&
+      formValues.name &&
+      formValues.surname &&
+      formValues.date_of_birth
+    );
+  };
+
   const handleCreateAccount = (event: { preventDefault: () => void }) => {
     event.preventDefault();
     console.log(formValues);
-
-    let formData = new FormData();
-    formData.append("username", formValues.username);
-    formData.append("password", formValues.password);
-    formData.append("name", formValues.name);
-    formData.append("surname", formValues.surname);
-
-    console.log(formData);
-    // axios
-    //   .post("http://localhost:8080/api/storage", formData, {
-    //     headers: {
-    //       "content-type": "multipart/form-data",
-    //     },
-    //   })
-    //   .then(toast("Successfull upload!"));
+    API.post("/registration", formValues).then((res) => {
+      console.log(res);
+      toast.success("Successfull registration!");
+    });
   };
 
   return (
@@ -100,7 +103,7 @@ const Registration = () => {
           label="Date of birth"
           value={formValues.date_of_birth}
           onChange={(newValue) =>
-            setFormValues({ ...formValues, date_of_birth: newValue })
+            setFormValues({ ...formValues, date_of_birth: newValue! })
           }
         />
         <br></br>
@@ -109,11 +112,12 @@ const Registration = () => {
           variant="contained"
           color="success"
           onClick={handleCreateAccount}
+          disabled={!isFormValid()}
         >
           Create account
         </Button>
       </Grid>
-      {/* <ToastContainer /> */}
+      <ToastContainer />
     </div>
   );
 };
