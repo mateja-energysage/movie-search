@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import { DateField } from "@mui/x-date-pickers";
 import { useState } from "react";
+import API from "../api";
+import { ToastContainer, toast } from "react-toastify";
 
 const genresList = [
   "Action",
@@ -83,8 +85,11 @@ const Upload = () => {
 
   const handleBulkSubmit = (e: any) => {
     e.preventDefault();
-    // Handle bulk submission logic here
     console.log(bulkValue);
+    API.post("/movies/bulk", { params: { chunks: bulkValue } }).then((res) => {
+      console.log(res);
+      toast.success("Successfull bulk upload!");
+    });
   };
 
   const handleProductionCompaniesChange = (event: any) => {
@@ -267,6 +272,7 @@ const Upload = () => {
           </Paper>
         </Grid>
       </Grid>
+      <ToastContainer />
     </Container>
   );
 };

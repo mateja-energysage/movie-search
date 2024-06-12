@@ -1,7 +1,12 @@
 import { Button, Grid, TextField, Typography } from "@mui/material";
 import { useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import API from "../api";
+import { useNavigate } from "react-router-dom";
 
-const Login = () => {
+const Login = ({ setToken }: any) => {
+  const navigate = useNavigate();
+
   const initialValues = {
     username: "",
     password: "",
@@ -19,20 +24,22 @@ const Login = () => {
 
   const handleLogin = (event: { preventDefault: () => void }) => {
     event.preventDefault();
-    console.log(formValues);
 
     let formData = new FormData();
     formData.append("username", formValues.username);
     formData.append("password", formValues.password);
 
     console.log(formData);
-    // axios
-    //   .post("http://localhost:8080/api/storage", formData, {
-    //     headers: {
-    //       "content-type": "multipart/form-data",
-    //     },
-    //   })
-    //   .then(toast("Successfull upload!"));
+    API.post("/login", formData, {
+      headers: {
+        "content-type": "multipart/form-data",
+      },
+    }).then((res) => {
+      console.log(res.data.access_token);
+      toast.success("Successfull login!");
+      setToken(res.data.access_token);
+      navigate("/upload");
+    });
   };
 
   return (
@@ -71,7 +78,18 @@ const Login = () => {
           Login
         </Button>
       </Grid>
-      {/* <ToastContainer /> */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 };

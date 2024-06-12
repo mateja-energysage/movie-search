@@ -12,6 +12,8 @@ import {
   Select,
   Typography,
 } from "@mui/material";
+import { ToastContainer } from "react-toastify";
+import API from "../api";
 
 const Statistics = () => {
   const [statisticType, setStatisticType] = useState("");
@@ -23,23 +25,12 @@ const Statistics = () => {
 
   const handleSubmit = (event: any) => {
     event.preventDefault();
-    getStatistics(statisticType);
-  };
-
-  const getStatistics = (type: any) => {
-    // Replace this with your API call or data fetching logic
-    const mockData = {
-      count: 20000,
-      min: 0.0,
-      max: 2923706026.0,
-      avg: 33918532.73955,
-      sum: 678370654791.0,
-      sum_of_squares: 2.8848953718780146e20,
-      variance: 1.3274009996186148e16,
-      variance_sampling: 1.327467372987264e16,
-      std_deviation: 115212889.88731316,
-    };
-    setStatisticsData(mockData);
+    API.get("/movies/extended-stats", {
+      params: { extended_stat_type: statisticType },
+    }).then((res: any) => {
+      console.log(res);
+      setStatisticsData(res.data);
+    });
   };
 
   return (
@@ -83,6 +74,18 @@ const Statistics = () => {
           </Grid>
         </Box>
       )}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Container>
   );
 };

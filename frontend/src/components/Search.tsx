@@ -20,9 +20,13 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
+import API from "../api";
+import { ToastContainer, toast } from "react-toastify";
 
 const Search = () => {
   // TODO: Update with correct values
+  // TODO: Add sort
+  // TODO: Add get one
   const genresList = [
     "Action",
     "Comedy",
@@ -65,70 +69,40 @@ const Search = () => {
     });
   };
 
+  const setDefaultValuesToNull = (values: any) => {
+    const newValues: any = {};
+    Object.keys(values).forEach((key) => {
+      if (values[key] === "" || values[key].length === 0) {
+        newValues[key] = null;
+      } else {
+        newValues[key] = values[key];
+      }
+    });
+    return newValues;
+  };
+
   const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    console.log(formValues);
+    const filteredValues = setDefaultValuesToNull(formValues);
+    console.log(filteredValues);
+
+    API.post("/movies/search", filteredValues).then((res: any) => {
+      console.log(res);
+      setResultList(res.data.results);
+    });
   };
 
   const handleDeleteAll = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     console.log("DELEETE");
+    API.delete("/movies").then((res) => {
+      console.log(res);
+      toast.success("Successfull deletion of all data!");
+      setResultList(null);
+    });
   };
 
-  const [resultList, setResultList] = useState([
-    {
-      name: "Example Name 1",
-      runtime: "Example runtime 1",
-      vote_average: 7.8,
-      vote_count: 2456,
-      revenue: 750000000,
-      budget: 250000000,
-      release_date: "2022-03-15",
-      overview: "This is the overview for Example Name 1.",
-      genres: ["Drama", "Thriller"],
-      production_companies: ["Company X", "Company Y"],
-      is_adult: false,
-    },
-    {
-      name: "Example Name 2",
-      runtime: "Example runtime 2",
-      vote_average: 6.5,
-      vote_count: 1023,
-      revenue: 320000000,
-      budget: 150000000,
-      release_date: "2021-07-22",
-      overview: "This is the overview for Example Name 2.",
-      genres: ["Comedy", "Romance"],
-      production_companies: ["Company A", "Company B"],
-      is_adult: false,
-    },
-    {
-      name: "Example Name 3",
-      runtime: "Example runtime 3",
-      vote_average: 9.2,
-      vote_count: 5600,
-      revenue: 980000000,
-      budget: 300000000,
-      release_date: "2023-11-10",
-      overview: "This is the overview for Example Name 3.",
-      genres: ["Action", "Adventure"],
-      production_companies: ["Company C", "Company D"],
-      is_adult: true,
-    },
-    {
-      name: "Example Name 4",
-      runtime: "Example runtime 4",
-      vote_average: 5.4,
-      vote_count: 678,
-      revenue: 120000000,
-      budget: 80000000,
-      release_date: "2020-05-05",
-      overview: "This is the overview for Example Name 4.",
-      genres: ["Horror", "Mystery"],
-      production_companies: ["Company E", "Company F"],
-      is_adult: true,
-    },
-  ]);
+  const [resultList, setResultList] = useState<Array<any> | null>(null);
 
   return (
     <Container maxWidth="lg">
@@ -299,73 +273,89 @@ const Search = () => {
         </Grid>
       </Grid>
 
-      <Box sx={{ marginTop: 4 }}>
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Runtime
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Vote Average
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Vote Count
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Revenue
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Budget
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Release Date
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Overview
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Genres
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  Production Companies
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                  R Rated
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {resultList.map((row) => (
-                <TableRow
-                  key={row.name}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">
-                    {row.name}
+      {resultList && (
+        <Box sx={{ marginTop: 4 }}>
+          <TableContainer component={Paper}>
+            <Table sx={{ minWidth: 650 }} aria-label="simple table">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Runtime
                   </TableCell>
-                  <TableCell align="right">{row.runtime}</TableCell>
-                  <TableCell align="right">{row.vote_average}</TableCell>
-                  <TableCell align="right">{row.vote_count}</TableCell>
-                  <TableCell align="right">{row.revenue}</TableCell>
-                  <TableCell align="right">{row.budget}</TableCell>
-                  <TableCell align="right">{row.release_date}</TableCell>
-                  <TableCell align="right">{row.overview}</TableCell>
-                  <TableCell align="right">{row.genres.join(", ")}</TableCell>
-                  <TableCell align="right">
-                    {row.production_companies.join(", ")}
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Vote Average
                   </TableCell>
-                  <TableCell align="right">
-                    <Checkbox checked={row.is_adult} />
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Vote Count
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Revenue
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Budget
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Release Date
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Overview
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Genres
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    Production Companies
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    R Rated
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
+              </TableHead>
+              <TableBody>
+                {resultList.map((row: any) => (
+                  <TableRow
+                    key={row.name}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {row.name}
+                    </TableCell>
+                    <TableCell align="right">{row.runtime}</TableCell>
+                    <TableCell align="right">{row.vote_average}</TableCell>
+                    <TableCell align="right">{row.vote_count}</TableCell>
+                    <TableCell align="right">{row.revenue}</TableCell>
+                    <TableCell align="right">{row.budget}</TableCell>
+                    <TableCell align="right">{row.release_date}</TableCell>
+                    <TableCell align="right">{row.overview}</TableCell>
+                    <TableCell align="right">
+                      {row.genres?.join(", ")}
+                    </TableCell>
+                    <TableCell align="right">
+                      {row.production_companies?.join(", ")}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Checkbox checked={row.is_adult} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Container>
   );
 };
