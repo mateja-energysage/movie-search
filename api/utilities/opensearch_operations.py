@@ -68,11 +68,12 @@ def set_result_window() -> None:
 
 
 def delete_index() -> None:
-    try:
-        client.indices.delete(index="movies")
-    except OpenSearchException as e:
-        logging.error(e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Opensearch error has occurred")
+    if client.indices.exists(index="movies"):
+        try:
+            client.indices.delete(index="movies")
+        except OpenSearchException as e:
+            logging.error(e, exc_info=True)
+            raise HTTPException(status_code=500, detail="Opensearch error has occurred")
 
 
 def get_movie_by_id_os(id: Any) -> MovieDTO:
@@ -98,8 +99,8 @@ def generate_search_query(
                 "filter": [],
             }
         },
-        "from": (page - 1) * 100,
-        "size": 100,
+        "from": page * 25,
+        "size": 25,
         "sort": [{sort_by: {"order": "desc"}}],
     }
 

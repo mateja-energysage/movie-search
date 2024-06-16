@@ -1,4 +1,5 @@
 import os
+import uuid
 from typing import List, Any, Dict
 
 import boto3
@@ -32,7 +33,9 @@ router = APIRouter()
 def add_movie(
     new_movie: NewMovieDTO,
 ) -> Any:
-    return index_document(MovieDTO(**new_movie.model_dump()).model_dump())
+    return index_document(
+        MovieDTO(id=str(uuid.uuid4()), **new_movie.model_dump()).model_dump()
+    )
 
 
 @router.post(
@@ -57,7 +60,7 @@ def add_movies(chunks: int | None = 10) -> dict[str, str]:
 )
 def get_movies(
     search_body: SearchBodyDTO,
-    page: int | None = 1,
+    page: int | None = 0,
     sort_by: str | None = "vote_average",
 ) -> SearchResultDTO:
     return get_movies_from_os(page=page, sort_by=sort_by, params=search_body)

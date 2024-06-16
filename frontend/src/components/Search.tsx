@@ -14,7 +14,9 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableFooter,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   Typography,
@@ -24,9 +26,6 @@ import API from "../api";
 import { ToastContainer, toast } from "react-toastify";
 
 const Search = () => {
-  // TODO: Update with correct values
-  // TODO: Add sort
-  // TODO: Add get one
   const genresList = [
     "Action",
     "Comedy",
@@ -36,6 +35,14 @@ const Search = () => {
     "Science Fiction",
     "Thriller",
     "Adventure",
+  ];
+
+  const sortByList = [
+    "runtime",
+    "vote_count",
+    "revenue",
+    "vote_average",
+    "budget",
   ];
 
   const [formValues, setFormValues] = useState({
@@ -54,12 +61,23 @@ const Search = () => {
     genres: [],
   });
 
+  const [page, setPage] = useState(0);
+  const [count, setCount] = useState(0);
+
+  const [idValue, setIdValue] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [resultList, setResultList] = useState<Array<any> | null>(null);
+
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
     setFormValues({
       ...formValues,
       [name]: type === "checkbox" ? checked : value,
     });
+  };
+
+  const handleSortByChange = (e: any) => {
+    setSortBy(e.target.value);
   };
 
   const handleGenreChange = (event: { target: { value: any } }) => {
@@ -81,14 +99,36 @@ const Search = () => {
     return newValues;
   };
 
-  const handleSubmit = (e: { preventDefault: () => void }) => {
-    e.preventDefault();
+  const handleChangePage = (
+    event: React.MouseEvent<HTMLButtonElement> | null,
+    newPage: number
+  ) => {
+    setPage(newPage);
+
     const filteredValues = setDefaultValuesToNull(formValues);
     console.log(filteredValues);
 
-    API.post("/movies/search", filteredValues).then((res: any) => {
+    API.post("/movies/search", filteredValues, {
+      params: { sort_by: sortBy ? sortBy : null, page: newPage },
+    }).then((res: any) => {
       console.log(res);
       setResultList(res.data.results);
+      setCount(res.data.total_count);
+    });
+  };
+
+  const handleSubmit = (e: { preventDefault: () => void } | null) => {
+    e!.preventDefault();
+    const filteredValues = setDefaultValuesToNull(formValues);
+    console.log(filteredValues);
+
+    API.post("/movies/search", filteredValues, {
+      params: { sort_by: sortBy ? sortBy : null },
+    }).then((res: any) => {
+      console.log(res);
+      setResultList(res.data.results);
+      setCount(res.data.total_count);
+      setPage(0);
     });
   };
 
@@ -102,7 +142,13 @@ const Search = () => {
     });
   };
 
-  const [resultList, setResultList] = useState<Array<any> | null>(null);
+  const handleIdSubmit = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    API.get(`/movies/${idValue}`).then((res: any) => {
+      console.log(res);
+      setResultList(res.data ? [res.data] : []);
+    });
+  };
 
   return (
     <Container maxWidth="lg">
@@ -255,20 +301,58 @@ const Search = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={handleDeleteAll}
-                >
-                  Delete all
-                </Button>
+                <FormControl fullWidth>
+                  <InputLabel>Sort By</InputLabel>
+                  <Select
+                    name="sort_by"
+                    value={sortBy}
+                    onChange={handleSortByChange}
+                  >
+                    {sortByList.map((element) => (
+                      <MenuItem key={element} value={element}>
+                        {element}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
             </Grid>
             <Box sx={{ marginTop: 2, textAlign: "center" }}>
               <Button type="submit" variant="contained">
                 Apply Filters
               </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleDeleteAll}
+              >
+                Delete all
+              </Button>
             </Box>
+          </Box>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Typography variant="h3" gutterBottom align="center">
+            Get Movie by ID
+          </Typography>
+          <Box component="form" onSubmit={handleIdSubmit} sx={{ flexGrow: 1 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Movie ID"
+                  name="id"
+                  fullWidth
+                  value={idValue}
+                  onChange={(e) => setIdValue(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Button type="submit" variant="contained">
+                  Get Movie
+                </Button>
+              </Grid>
+            </Grid>
           </Box>
         </Grid>
       </Grid>
@@ -280,6 +364,9 @@ const Search = () => {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                    ID
+                  </TableCell>
                   <TableCell align="right" sx={{ fontWeight: "bold" }}>
                     Runtime
                   </TableCell>
@@ -315,12 +402,13 @@ const Search = () => {
               <TableBody>
                 {resultList.map((row: any) => (
                   <TableRow
-                    key={row.name}
+                    key={row.id}
                     sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                   >
                     <TableCell component="th" scope="row">
                       {row.name}
                     </TableCell>
+                    <TableCell align="right">{row.id}</TableCell>
                     <TableCell align="right">{row.runtime}</TableCell>
                     <TableCell align="right">{row.vote_average}</TableCell>
                     <TableCell align="right">{row.vote_count}</TableCell>
@@ -340,6 +428,18 @@ const Search = () => {
                   </TableRow>
                 ))}
               </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    colSpan={3}
+                    count={count}
+                    rowsPerPage={resultList.length}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPageOptions={[]}
+                  />
+                </TableRow>
+              </TableFooter>
             </Table>
           </TableContainer>
         </Box>
