@@ -17,6 +17,7 @@ import { DateField } from "@mui/x-date-pickers";
 import { useState } from "react";
 import API from "../api";
 import { ToastContainer, toast } from "react-toastify";
+import dayjs, { Dayjs } from "dayjs";
 
 const genresList = [
   "Action",
@@ -34,6 +35,20 @@ const productionCompaniesList = [
   "20th Century Fox",
   "Sony Pictures",
 ]; // Example production companies
+interface FormValues {
+  name: string;
+  runtime: number | string; // Allowing string to handle empty inputs
+  vote_average: number | string; // Allowing string to handle empty inputs
+  vote_count: number | string; // Allowing string to handle empty inputs
+  revenue: number | string; // Allowing string to handle empty inputs
+  budget: number | string; // Allowing string to handle empty inputs
+  release_date: Dayjs | null;
+  adult: boolean;
+  overview: string;
+  genres: string[];
+  production_companies: string[];
+}
+
 const Upload = () => {
   const [formValues, setFormValues] = useState({
     name: "",
@@ -48,6 +63,23 @@ const Upload = () => {
     genres: [],
     production_companies: [],
   });
+
+  const isFormValid = () => {
+    const requiredFields: (keyof FormValues)[] = [
+      "name",
+      "runtime",
+      "vote_average",
+      "vote_count",
+      "revenue",
+      "budget",
+      "adult",
+    ];
+
+    return requiredFields.every((field) => {
+      const value = formValues[field];
+      return value !== null && value !== "" && value !== undefined;
+    });
+  };
 
   const [bulkValue, setBulkValue] = useState("");
 
@@ -79,14 +111,25 @@ const Upload = () => {
 
   const handleFormSubmit = (e: any) => {
     e.preventDefault();
-    // Handle form submission logic here
     console.log(formValues);
+    if (isFormValid()) {
+      API.post("/movies", formValues).then((res) => {
+        console.log(res);
+        toast.success("Successfull movie upload!");
+      });
+    } else {
+      toast.error("Required fields not populated!");
+    }
   };
 
   const handleBulkSubmit = (e: any) => {
     e.preventDefault();
     console.log(bulkValue);
-    API.post("/movies/bulk", { params: { chunks: bulkValue } }).then((res) => {
+    API.post(
+      "/movies/bulk",
+      {},
+      { params: { chunks: parseInt(bulkValue, 10) } }
+    ).then((res) => {
       console.log(res);
       toast.success("Successfull bulk upload!");
     });
@@ -237,7 +280,12 @@ const Upload = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <Button type="submit" variant="contained" fullWidth>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={!isFormValid}
+                  >
                     Upload
                   </Button>
                 </Grid>

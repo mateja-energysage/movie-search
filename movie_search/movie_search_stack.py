@@ -125,7 +125,13 @@ class MovieSearchStack(Stack):
         self.movie_bucket.grant_read_write(self.bulk_upload_lambda)
 
         self.api = apigateway.LambdaRestApi(
-            self, "MovieAPIGateway", handler=self.movie_handler_lambda
+            self,
+            "MovieAPIGateway",
+            handler=self.movie_handler_lambda,
+            default_cors_preflight_options=apigateway.CorsOptions(
+                allow_origins=apigateway.Cors.ALL_ORIGINS,
+                allow_methods=apigateway.Cors.ALL_METHODS,
+            ),
         )
 
         ### FRONTEND PART OF CDK ###
@@ -137,17 +143,46 @@ class MovieSearchStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
+        self.cloudfront_oai = cloudfront.OriginAccessIdentity(self, "CloudFrontOAI")
+
+        # Add a bucket policy to allow CloudFront OAI to access S3 objects
+        self.hosting_bucket.add_to_resource_policy(
+            aws_iam.PolicyStatement(
+                actions=["s3:GetObject"],
+                resources=[self.hosting_bucket.arn_for_objects("*")],
+                principals=[
+                    aws_iam.CanonicalUserPrincipal(
+                        self.cloudfront_oai.cloud_front_origin_access_identity_s3_canonical_user_id
+                    )
+                ],
+            )
+        )
+
         self.distribution = cloudfront.Distribution(
             self,
             "CloudfrontDistribution",
             default_behavior=cloudfront.BehaviorOptions(
-                origin=origins.S3Origin(self.hosting_bucket),
+                origin=origins.S3Origin(
+                    self.hosting_bucket, origin_access_identity=self.cloudfront_oai
+                ),
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
             ),
             default_root_object="index.html",
             error_responses=[
                 cloudfront.ErrorResponse(
+                    http_status=403,
+                    response_http_status=200,
+                    response_page_path="/index.html",
+                ),
+                cloudfront.ErrorResponse(
                     http_status=404,
+                    response_http_status=200,
+                    response_page_path="/index.html",
+                ),
+                cloudfront.ErrorResponse(
+                    http_status=405,
                     response_http_status=200,
                     response_page_path="/index.html",
                 ),

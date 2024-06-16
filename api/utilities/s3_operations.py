@@ -6,7 +6,7 @@ import pandas as pd
 from botocore.exceptions import ClientError
 
 from api.models.movie_dtos import MovieDTO
-from api.utilities.opensearch_operations import populate_index
+from api.utilities.opensearch_operations import populate_index, delete_index
 
 # Set the values
 bucket_name = os.environ.get("S3_BUCKET_NAME", "")
@@ -23,7 +23,7 @@ def process_csv_file(chunks):
         s3 = boto3.client("s3")
         obj = s3.get_object(Bucket=bucket_name, Key=key)
         csv_file = obj["Body"]
-
+        delete_index()
         for df in read_csv(csv_file):
             movies = []
             for index, row in df.iterrows():
