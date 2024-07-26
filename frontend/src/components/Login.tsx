@@ -34,12 +34,17 @@ const Login = ({ setToken }: any) => {
       headers: {
         "content-type": "multipart/form-data",
       },
-    }).then((res) => {
-      console.log(res.data.access_token);
-      toast.success("Successfull login!");
-      setToken(res.data.access_token);
-      navigate("/upload");
-    });
+    })
+      .then((res) => {
+        console.log(res.data.access_token);
+        toast.success("Successfull login!");
+        setToken(res.data.access_token);
+        navigate("/upload");
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Wrong credentials!");
+      });
   };
 
   return (

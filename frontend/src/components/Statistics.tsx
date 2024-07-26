@@ -12,7 +12,7 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import API from "../api";
 
 const Statistics = () => {
@@ -27,10 +27,15 @@ const Statistics = () => {
     event.preventDefault();
     API.get("/movies/extended-stats", {
       params: { extended_stat_type: statisticType },
-    }).then((res: any) => {
-      console.log(res);
-      setStatisticsData(res.data);
-    });
+    })
+      .then((res: any) => {
+        console.log(res);
+        setStatisticsData(res.data);
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Error while fetching statistics!");
+      });
   };
 
   return (

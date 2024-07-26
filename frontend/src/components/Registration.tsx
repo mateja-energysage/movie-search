@@ -40,10 +40,15 @@ const Registration = () => {
   const handleCreateAccount = (event: { preventDefault: () => void }) => {
     event.preventDefault();
     console.log(formValues);
-    API.post("/registration", formValues).then((res) => {
-      console.log(res);
-      toast.success("Successfull registration!");
-    });
+    API.post("/registration", formValues)
+      .then((res) => {
+        console.log(res);
+        toast.success("Successfull registration!");
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Error on registration!");
+      });
   };
 
   return (
