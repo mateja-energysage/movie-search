@@ -113,10 +113,15 @@ const Upload = () => {
     e.preventDefault();
     console.log(formValues);
     if (isFormValid()) {
-      API.post("/movies", formValues).then((res) => {
-        console.log(res);
-        toast.success("Successfull movie upload!");
-      });
+      API.post("/movies", formValues)
+        .then((res) => {
+          console.log(res);
+          toast.success("Successfull movie upload!");
+        })
+        .catch((error) => {
+          console.log(error);
+          toast.error("Error while posting a movie");
+        });
     } else {
       toast.error("Required fields not populated!");
     }
@@ -129,10 +134,15 @@ const Upload = () => {
       "/movies/bulk",
       {},
       { params: { chunks: parseInt(bulkValue, 10) } }
-    ).then((res) => {
-      console.log(res);
-      toast.success("Successfull bulk upload!");
-    });
+    )
+      .then((res) => {
+        console.log(res);
+        toast.success("Successfull bulk upload!");
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Error while posting movies!");
+      });
   };
 
   const handleProductionCompaniesChange = (event: any) => {

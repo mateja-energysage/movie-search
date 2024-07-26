@@ -110,11 +110,16 @@ const Search = () => {
 
     API.post("/movies/search", filteredValues, {
       params: { sort_by: sortBy ? sortBy : null, page: newPage },
-    }).then((res: any) => {
-      console.log(res);
-      setResultList(res.data.results);
-      setCount(res.data.total_count);
-    });
+    })
+      .then((res: any) => {
+        console.log(res);
+        setResultList(res.data.results);
+        setCount(res.data.total_count);
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Error on search!");
+      });
   };
 
   const handleSubmit = (e: { preventDefault: () => void } | null) => {
@@ -124,30 +129,45 @@ const Search = () => {
 
     API.post("/movies/search", filteredValues, {
       params: { sort_by: sortBy ? sortBy : null },
-    }).then((res: any) => {
-      console.log(res);
-      setResultList(res.data.results);
-      setCount(res.data.total_count);
-      setPage(0);
-    });
+    })
+      .then((res: any) => {
+        console.log(res);
+        setResultList(res.data.results);
+        setCount(res.data.total_count);
+        setPage(0);
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Error on search!");
+      });
   };
 
   const handleDeleteAll = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     console.log("DELEETE");
-    API.delete("/movies").then((res) => {
-      console.log(res);
-      toast.success("Successfull deletion of all data!");
-      setResultList(null);
-    });
+    API.delete("/movies")
+      .then((res) => {
+        console.log(res);
+        toast.success("Successfull deletion of all data!");
+        setResultList(null);
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Error while deleting movies!");
+      });
   };
 
   const handleIdSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    API.get(`/movies/${idValue}`).then((res: any) => {
-      console.log(res);
-      setResultList(res.data ? [res.data] : []);
-    });
+    API.get(`/movies/${idValue}`)
+      .then((res: any) => {
+        console.log(res);
+        setResultList(res.data ? [res.data] : []);
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Error while fetching single movie!");
+      });
   };
 
   return (
